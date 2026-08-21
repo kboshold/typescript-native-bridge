@@ -1630,10 +1630,10 @@ index 12b9d4079..db9750b1a 100644
  	return symbol == c.undefinedSymbol
  }
 diff --git a/internal/checker/types.go b/internal/checker/types.go
-index bd1342092..b9bfb60d7 100644
+index bd1342092..f1003cf01 100644
 --- a/internal/checker/types.go
 +++ b/internal/checker/types.go
-@@ -746,6 +746,16 @@ func (t *Type) Target() *Type {
+@@ -746,6 +746,21 @@ func (t *Type) Target() *Type {
  	panic("Unhandled case in Type.Target")
  }
  
@@ -1642,7 +1642,12 @@ index bd1342092..b9bfb60d7 100644
 +// embeds InterfaceType, so the promoted accessor covers both data shapes.
 +func (t *Type) ThisType() *Type {
 +	if t.objectFlags&(ObjectFlagsClassOrInterface|ObjectFlagsTuple) != 0 {
-+		return t.AsInterfaceType().thisType
++		// A tuple reference re-created from objectFlags keeps the Tuple bit but
++		// stores *TypeReference data, so AsInterfaceType() is nil here. Return
++		// nil for it, like stock and the Target() case in api.newTypeResponse.
++		if it := t.AsInterfaceType(); it != nil {
++			return it.thisType
++		}
 +	}
 +	return nil
 +}
@@ -1650,7 +1655,7 @@ index bd1342092..b9bfb60d7 100644
  func (t *Type) Mapper() *TypeMapper {
  	switch {
  	case t.flags&TypeFlagsObject != 0:
-@@ -903,6 +913,11 @@ type UniqueESSymbolType struct {
+@@ -903,6 +918,11 @@ type UniqueESSymbolType struct {
  	name string
  }
  
