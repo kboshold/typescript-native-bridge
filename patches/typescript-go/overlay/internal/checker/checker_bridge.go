@@ -115,3 +115,33 @@ func (c *Checker) computePropertiesOfUnionOrIntersectionType(t *Type, d *UnionOr
 	}
 	return props
 }
+
+// instantiatedTargetIsCyclic reports whether symbol's links.target chain
+// returns to a symbol already on it. Stock builds that chain so each target is
+// strictly less instantiated, so it is short and acyclic; cross-checker
+// SymbolHandle reuse can close it into a loop, which getTypeOfInstantiatedSymbol
+// must not chase. Tortoise/hare so the hot path allocates nothing, and TryGet so
+// walking never materializes a links entry of its own.
+func (c *Checker) instantiatedTargetIsCyclic(symbol *ast.Symbol) bool {
+	slow, fast := symbol, symbol
+	for {
+		for range 2 {
+			fast = c.instantiatedTargetOf(fast)
+			if fast == nil {
+				return false
+			}
+		}
+		slow = c.instantiatedTargetOf(slow)
+		if slow == fast {
+			return true
+		}
+	}
+}
+
+func (c *Checker) instantiatedTargetOf(symbol *ast.Symbol) *ast.Symbol {
+	links := c.valueSymbolLinks.TryGet(symbol)
+	if links == nil {
+		return nil
+	}
+	return links.target
+}
