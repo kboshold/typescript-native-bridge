@@ -116,7 +116,7 @@ function tnbProgram() {
 	let builder;
 	host.afterProgramCreate = b => { builder = b; };
 	const watch = tsb.createWatchProgram(host);
-	return { program: (builder ?? watch.getProgram()).getProgram(), close: () => watch.close?.() };
+	return { program: (builder ?? watch.getProgram()).getProgram(), close: () => watch.close() };
 }
 
 function stockProgram() {
